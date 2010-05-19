@@ -50,7 +50,7 @@ class NeuQuant {
     
     public static var ncycles: Int	=	100;			// no. of learning cycles
 
-    public static var netsize: Int  = 256;		// number of colours used
+    public static var netsize: Int  = 31;		// number of colours used
     public static var specials: Int  = 3;		// number of reserved colours used
     public static var bgColour: Int  = specials-1;	// reserved background colour
     public static var cutnetsize: Int  = netsize - specials;
@@ -90,9 +90,9 @@ class NeuQuant {
     private var samplefac: Int;
 
 
-    public function new (im: Image, w: Int, h: Int) {
+    public function new (pixels: Array<Int>, w: Int, h: Int) {
         setSampleFac(1);
-        setPixels (im, w, h);
+        setPixels (pixels, w, h);
 		setUpArrays ();
     }
     //
@@ -125,12 +125,12 @@ class NeuQuant {
     	return netsize;
     }
 
-    public function getColor(i: Int): Color {
-    	if (i < 0 || i >= netsize) return null;
+    public function getColor(i: Int): Int {
+    	if (i < 0 || i >= netsize) return 0;
 	    var bb: Int = colormap[i][0];
     	var gg: Int = colormap[i][1];
     	var rr: Int = colormap[i][2];
-    	return new Color (rr, gg, bb);
+    	return (rr << 16) + (gg << 8) + bb;
     }
 
     //public Int writeColourMap (boolean rgb, OutputStream out) throws IOException {
@@ -146,14 +146,23 @@ class NeuQuant {
     //}
 
     private function setUpArrays () {
+		freq = new Array<Float>();
+		bias = new Array<Float>();
+		
+		network = new Array<Array<Float>>();
+		
+		network[0] = new Array<Float>();
     	network [0] [0] = 0.0;	// black
     	network [0] [1] = 0.0;
     	network [0] [2] = 0.0;
     	
+		network[1] = new Array<Float>();
     	network [1] [0] = 255.0;	// white
     	network [1] [1] = 255.0;
     	network [1] [2] = 255.0;
 		
+		
+		network[bgColour] = new Array<Float>();
     	// RESERVED bgColour	// background
     	
         for (i in 0...specials) {
@@ -162,6 +171,7 @@ class NeuQuant {
         }
         
         for (i in specials...netsize) {
+			network[i] = new Array<Float>();
 		    var p: Array<Float> = network [i];
 		    p[0] = (255.0 * (i-specials)) / cutnetsize;
 		    p[1] = (255.0 * (i-specials)) / cutnetsize;
@@ -179,15 +189,16 @@ class NeuQuant {
         //setPixels (im, w, h);
     //}
     
-    private function setPixels (im: Image, w: Int, h: Int) {
+    private function setPixels (pixels: Array<Int>, w: Int, h: Int) {
         if (w*h < maxprime) throw "Image is too small";
-        pixels = im.getPixels();
+        this.pixels = pixels;
     }
     
 
     public function init () {
         learn ();
         fix ();
+		trace("zxc");
         inxbuild ();
     }
 
@@ -321,8 +332,8 @@ class NeuQuant {
 	        
     		i++;
     		if (i%delta == 0) {	
-    			alpha -= cast(alpha / alphadec, Int);
-    			biasRadius -= cast(biasRadius / radiusdec, Int);
+    			alpha = Std.int(alpha / alphadec);
+    			biasRadius -= Std.int(biasRadius / radiusdec);
     			rad = biasRadius >> radiusbiasshift;
     			if (rad <= 1) rad = 0;
     		}
@@ -331,9 +342,11 @@ class NeuQuant {
     }
 
     private function fix() {
+		colormap = new Array<Array<Int>>();
         for (i in 0...netsize) {
+			colormap[i] = new Array<Int>();
             for (j in 0...3) {
-                var x: Int = cast(0.5 + network[i][j]);
+                var x: Int = Std.int(0.5 + network[i][j]);
                 if (x < 0) x = 0;
                 if (x > 255) x = 255;
                 colormap[i][j] = x;
@@ -343,6 +356,7 @@ class NeuQuant {
     }
 
     private function inxbuild() {
+		netindex = new Array<Int>();
         // Insertion sort of network and building of netindex[0..255]
 
     	var previouscol: Int = 0;
@@ -401,13 +415,13 @@ class NeuQuant {
 	    return i;
     }
 
-    public function lookupColor (c: Color): Int {
-	    var r: Int   = c.getRed ();
-	    var g: Int = c.getGreen ();
-	    var b: Int  = c.getBlue ();
-	    var i: Int = inxsearch(b, g, r);
-	    return i;
-    }
+    //public function lookupColor (c: Color): Int {
+	    //var r: Int   = c.getRed ();
+	    //var g: Int = c.getGreen ();
+	    //var b: Int  = c.getBlue ();
+	    //var i: Int = inxsearch(b, g, r);
+	    //return i;
+    //}
 
     public function lookupRgbOrBgr (rgb: Bool, x: Int, g: Int, y: Int): Int {
 	    return rgb ? inxsearch (y, g, x) : inxsearch (x, g, y);
@@ -430,7 +444,7 @@ class NeuQuant {
 		return best;
     }
     
-    private function inxsearch(b: Int, g: Int, r: Int) {
+    private function inxsearch(b: Int, g: Int, r: Int): Int {
         // Search for BGR values 0..255 and return colour index
     	var bestd: Int = 1000;		// biggest possible dist is 256*3
     	var best: Int = -1;
