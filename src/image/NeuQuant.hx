@@ -21,14 +21,13 @@
 //    public Color getColor (Int i)
 
 
-package ru.grebenshikov.image;
+package image;
 
 import java.util.*;
 import java.io.*;
 import java.awt.Image;
 import java.awt.Color;
 import java.awt.image.*;
-
 
 /* NeuQuant Neural-Net Quantization Algorithm
  * ------------------------------------------

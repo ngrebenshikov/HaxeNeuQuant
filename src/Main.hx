@@ -3,13 +3,10 @@
 import flash.Lib;
 import ru.grebenshikov.image.NeuQuant;
 
-class Main 
-{
+class Main {
 	
-	static function main() 
-	{
+	static function main() {
 		var nq = new NeuQuant();
-		
 	}
 	
 }
