@@ -1,12 +1,13 @@
 ﻿package ;
 
 import flash.Lib;
-import ru.grebenshikov.image.NeuQuant;
+import image.NeuQuant;
+import image.Image;
 
 class Main {
 	
 	static function main() {
-		var nq = new NeuQuant();
+		var nq = new NeuQuant(new Image(), 10, 10);
 	}
 	
 }
