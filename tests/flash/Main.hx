@@ -10,8 +10,12 @@ import flash.display.BitmapData;
 import flash.geom.Rectangle;
 import flash.geom.Point;
 import flash.events.Event;
+import flash.utils.ByteArray;
+import haxe.Int32;
+import haxe.io.Bytes;
+import haxe.io.BytesBuffer;
 import haxe.io.BytesOutput;
-import image.NeuQuant;
+import neuquant.NeuQuant;
 
 class Main {
 	
@@ -19,34 +23,60 @@ class Main {
 		trace("qwe");
 		var data: BitmapData = original.bitmapData.clone();
 		var bytesArray = data.getPixels(new Rectangle(0, 0, data.width, data.height));
+		
 		bytesArray.position = 0;
-		var bytes: Array<Int> = [];
+		var hash: IntHash<Bool> = new IntHash<Bool>();
+		while (bytesArray.bytesAvailable > 0) {
+			hash.set(bytesArray.readInt(), true);
+		}
+		trace("Colors in: " + Lambda.count(hash));
+
+			
+		bytesArray.position = 0;
+		var bytesBuffer: BytesBuffer = new BytesBuffer();
 		trace(bytesArray.bytesAvailable);
 		try {
-			while (true) {
-				bytes.push(bytesArray.readInt());
+			while (bytesArray.bytesAvailable > 0) {
+				var b = bytesArray.readByte();
+				//trace(b);
+				bytesBuffer.addByte(b);
 			}
 		} catch (e: Dynamic) { }
+		var bytes: Bytes = bytesBuffer.getBytes();
 		trace(bytes.length);
-		var nq = new NeuQuant(bytes, data.width, data.height);
-		trace("1");
-			nq.init();
-		trace("2");
-		bytesArray.clear();
-		for (i in 0...(bytes.length)) {
-			bytesArray.writeInt(nq.getColor(nq.lookupInt(bytes[i])));
-		}
-		bytesArray.position = 0;
-		trace(bytesArray.length);
-		trace(data.width);
-		trace(data.height);
 		try {
-			data.setPixels(new Rectangle(0, 0, data.width, data.height),bytesArray);
+			var nq = new NeuQuant();
+			trace("construct");
+			nq.initnet(bytes, 256, 1);
+			trace("init");
+			nq.learn(1,true);
+			trace("learn");
+			nq.inxbuild(); 
+			trace("build");
+			//bytesArray.clear();
+			var outBytes = new ByteArray();
+			hash = new IntHash<Bool>();
+			var i = 0;
+			while (i < (bytes.length - 3) ) {
+				var color: Int = (bytes.get(i) << 24) | (bytes.get(i + 1) << 16) | (bytes.get(i + 2) << 8) | bytes.get(i + 3);
+				var index: Int = nq.lookup(color);
+				hash.set(index, true);
+				//trace(index);
+				//outBytes.writeInt(color);
+				outBytes.writeInt(nq.getColor(index));
+				i += 4;
+			}
+			trace("Colors out: " + Lambda.count(hash));
+			outBytes.position = 0;
+			trace(outBytes.length);
+			trace(data.width);
+			trace(data.height);
+			data.setPixels(new Rectangle(0, 0, data.width, data.height),outBytes);
 		} catch (e: Dynamic) {
 			trace(e);
 		}
 		var image:Bitmap = new Bitmap(data);
-		image.x = 200;
+		image.x = 500;
 		Lib.current.addChild(image);
 		return image;
     }
@@ -71,15 +101,15 @@ class Main {
 				var loader: Loader = new Loader();
 				loader.contentLoaderInfo.addEventListener(Event.COMPLETE, function(e) { 
 					textField.htmlText = Std.string("completed");
-					loader.content.scaleX = 0.1;
-					loader.content.scaleY = 0.1;
+					//loader.content.scaleX = 0.1;
+					//loader.content.scaleY = 0.1;
 					loader.content.x = 200;
 					loader.content.y = 100;
 					Lib.current.addChild(loader.content);
 					
-					var image:Bitmap = cast(loader.content);
+					//var image:Bitmap = cast(loader.content);
 
-					var duplicate:Bitmap = duplicateImage(image);
+					var duplicate:Bitmap = duplicateImage(cast(loader.content));
 					//bitmapData = duplicate.bitmapData;
 					
 				});
