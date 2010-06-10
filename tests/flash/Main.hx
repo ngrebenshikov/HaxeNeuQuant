@@ -15,12 +15,12 @@ import haxe.Int32;
 import haxe.io.Bytes;
 import haxe.io.BytesBuffer;
 import haxe.io.BytesOutput;
+import haxe.Timer;
 import neuquant.NeuQuant;
 
 class Main {
 	
-	static function duplicateImage(original:Bitmap):Bitmap {
-		trace("qwe");
+	static function duplicateImage(original: Bitmap): Void {
 		var data: BitmapData = original.bitmapData.clone();
 		var bytesArray = data.getPixels(new Rectangle(0, 0, data.width, data.height));
 		
@@ -31,29 +31,12 @@ class Main {
 		}
 		trace("Colors in: " + Lambda.count(hash));
 
-			
 		bytesArray.position = 0;
-		var bytesBuffer: BytesBuffer = new BytesBuffer();
-		trace(bytesArray.bytesAvailable);
-		try {
-			while (bytesArray.bytesAvailable > 0) {
-				var b = bytesArray.readByte();
-				//trace(b);
-				bytesBuffer.addByte(b);
-			}
-		} catch (e: Dynamic) { }
-		var bytes: Bytes = bytesBuffer.getBytes();
-		trace(bytes.length);
-		try {
-			var nq = new NeuQuant();
-			trace("construct");
-			nq.initnet(bytes, 256, 1);
-			trace("init");
-			nq.learn(1,true);
-			trace("learn");
-			nq.inxbuild(); 
-			trace("build");
-			//bytesArray.clear();
+		var bytes: Bytes = Bytes.ofData(bytesArray);//bytesBuffer.getBytes();
+
+		var nq = new NeuQuant();
+		var remap = function() {
+			//Remap colors
 			var outBytes = new ByteArray();
 			hash = new IntHash<Bool>();
 			var i = 0;
@@ -61,24 +44,30 @@ class Main {
 				var color: Int = (bytes.get(i) << 24) | (bytes.get(i + 1) << 16) | (bytes.get(i + 2) << 8) | bytes.get(i + 3);
 				var index: Int = nq.lookup(color);
 				hash.set(index, true);
-				//trace(index);
-				//outBytes.writeInt(color);
 				outBytes.writeInt(nq.getColor(index));
 				i += 4;
 			}
 			trace("Colors out: " + Lambda.count(hash));
+			
+			//Setting new pixels to data
 			outBytes.position = 0;
-			trace(outBytes.length);
-			trace(data.width);
-			trace(data.height);
 			data.setPixels(new Rectangle(0, 0, data.width, data.height),outBytes);
-		} catch (e: Dynamic) {
-			trace(e);
-		}
-		var image:Bitmap = new Bitmap(data);
-		image.x = 500;
-		Lib.current.addChild(image);
-		return image;
+
+			var image:Bitmap = new Bitmap(data);
+			image.x = 500;
+			Lib.current.addChild(image);
+		};
+
+		//Quantization
+		var status: QuantizationStatus;
+		var timer: Timer = new Timer(15);
+		timer.run = function() { 
+			status = nq.quantizeAsync(bytes, true, 256, 1, 1, false, 100);
+			if (status.finished) {
+				timer.stop();
+				remap();
+			}
+		};
     }
 	
 	static var bitmapData: BitmapData;
@@ -109,7 +98,7 @@ class Main {
 					
 					//var image:Bitmap = cast(loader.content);
 
-					var duplicate:Bitmap = duplicateImage(cast(loader.content));
+					duplicateImage(cast(loader.content));
 					//bitmapData = duplicate.bitmapData;
 					
 				});

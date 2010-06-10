@@ -28,12 +28,44 @@
  * ANSI C, floats, removed pointer tricks and used arrays and structs.
  *
  * Ported from C to Haxe by Nickolay Grebenshikov, http://www.grebenshikov.ru, (2010)
+ * Support 32bit ARGB images.
  */
 
 package neuquant;
-import haxe.Int32;
+
 import haxe.io.Bytes;
 import haxe.io.BytesBuffer;
+
+class LearningStatus {
+	public var i: Int; 
+	public var al: Int; 
+	public var b: Int; 
+	public var g: Int; 
+	public var r: Int;
+	public var p: Int; 
+	public var  rad: Int; 
+	public var step: Int; 
+	public var delta: Int; 
+	public var samplepixels: Int;
+	public var radius: Float; 
+	public var alpha: Float;
+	public var started: Bool;
+	public var finished: Bool;
+	public function new() {
+		started = false;
+		finished = false;
+	}
+}
+
+class QuantizationStatus {
+	public var finished: Bool;
+	public var percentage: Int;
+	public var workChunkTimeSize: Float;
+	public var chunkStartedTime: Float;
+	public function new() {
+		finished = false;
+	}
+}
 
 typedef NqPixel = {
 	var al: Float;
@@ -95,6 +127,7 @@ class NeuQuant {
 	-------------------------- */
    
 	var thepicture: Bytes;		/* the input image itself */
+	var isARGB: Bool; 			/* ARGB (e.g. Flash) or RGBA (e.g. PNG) */
 	var lengthcount: Int;				/* lengthcount = H*W*3 */
 	
 	var network: Array<NqPixel>;			/* the network itself */
@@ -110,14 +143,37 @@ class NeuQuant {
 	var gamma_correction: Float; // 1.0/2.2 usually
 	
 	public function new() {}
+	public function quantize(image: Bytes, isARGB: Bool, colorsAmount: Int, gammaCorrection: Float, sampleFactor: Int, verbose: Bool) {
+		quantizeAsync(image, isARGB, colorsAmount, gammaCorrection, sampleFactor, verbose, 31536000000 /* a year */);
+	}
+	
+	var quantizationStatus: QuantizationStatus;
+	public function quantizeAsync(image: Bytes, isARGB: Bool, colorsAmount: Int, 
+									gammaCorrection: Float, sampleFactor: Int, verbose: Bool, workChunkTimeSize: Float): QuantizationStatus {
+		this.isARGB = isARGB;
+		if (null == quantizationStatus || quantizationStatus.finished) {
+			quantizationStatus = new QuantizationStatus();
+			quantizationStatus.workChunkTimeSize = workChunkTimeSize;
+			learningStatus = new LearningStatus();
+			initnet(image, colorsAmount, gammaCorrection);
+		}
+		quantizationStatus.chunkStartedTime = Date.now().getTime();
+		
+		learn(sampleFactor, verbose);
+		if (!learningStatus.finished) return quantizationStatus; //Learning was interruped
+		
+		inxbuild();
+		
+		quantizationStatus.finished = true;
+		return quantizationStatus;
+	}
 	
 	/* Initialise network in range (0,0,0,0) to (255,255,255,255) and set parameters
 	   ----------------------------------------------------------------------- */
 
 	var biasvalues: Array<Float>;
 
-	public function initnet(thepic: Bytes, colours: Int, gamma_c: Float): Void
-	{
+	function initnet(thepic: Bytes, colours: Int, gamma_c: Float): Void {
 		var i: Int;
 		
 		gamma_correction = gamma_c;
@@ -179,13 +235,12 @@ class NeuQuant {
 		}
 	}
 
-
 	/* Insertion sort of network and building of netindex[0..255] (to do after unbias)
 	   ------------------------------------------------------------------------------- */
 
 	var colormap: Array<NqColormap>;
 
-	public function inxbuild(): Void {
+	function inxbuild(): Void {
 		var i: Int, j: Int, smallpos: Int, smallval: Int;
 		var previouscol: Int, startpos: Int;
 
@@ -241,7 +296,7 @@ class NeuQuant {
 	/* Search for ABGR values 0..255 (after net is unbiased) and return colour index
 	   ---------------------------------------------------------------------------- */
 
-	  function slowinxsearch(al: Int, b: Int, g: Int, r: Int): Int	{
+	function slowinxsearch(al: Int, b: Int, g: Int, r: Int): Int	{
 		var i: Int, best: Int = 0;
 		var a: Float, bestd: Float = 1<<30, dist: Float;
 		
@@ -274,7 +329,7 @@ class NeuQuant {
 	    var r: Int = (color >> 16) & 0xff;
 	    var g: Int = (color >>  8) & 0xff;
 	    var b: Int = (color      ) & 0xff;
-	    return slowinxsearch(al, b, g, r);
+	    return inxsearch(al, b, g, r);
 	}
 	
 	public function getColor(index: Int): Int {
@@ -445,72 +500,82 @@ class NeuQuant {
 
 	/* Main Learning Loop
 	   ------------------ */
+	   
+	var learningStatus: LearningStatus;
 	/* sampling factor 1..30 */
-	public function learn(samplefac: Int, verbose: Bool) { /* Stu: N.B. added parameter so that main() could control verbosity. */
-		var i: Int, j: Int, al: Int, b: Int, g: Int, r: Int;
-		var p: Int,  rad: Int, step: Int, delta: Int, samplepixels: Int;
-		var radius: Float, alpha: Float;
+	function learn(samplefac: Int, verbose: Bool) { /* Stu: N.B. added parameter so that main() could control verbosity. */
+		var s: LearningStatus = learningStatus;
 		
-		alphadec = 30 + ((samplefac-1)/3);
-		samplepixels = Std.int(lengthcount/(4*samplefac)); 
-		delta = Std.int(samplepixels/ncycles);  /* here's a problem with small images: samplepixels < ncycles => delta = 0 */
-		if(delta==0) delta = 1;        /* kludge to fix */
-		alpha = initalpha;
-		radius = initradius;
+		if (s.finished) return; //All work was done
 		
-		p = 0;
-		
-		rad = Std.int(radius);
-		if (rad <= 1) rad = 0;
-		radpower = new Array<Float>();
-		for (i in 0...rad) 
-			radpower.push(Math.floor( alpha*(((rad*rad - i*i)*radbias)/(rad*rad)) ));
-		
-		if(verbose) trace("beginning 1D learning: initial radius=" + rad + "\n");
+		if (!s.started) {
+			alphadec = 30 + ((samplefac-1)/3);
+			s.samplepixels = Std.int(lengthcount/(4*samplefac)); 
+			s.delta = Std.int(s.samplepixels/ncycles);  /* here's a problem with small images: samplepixels < ncycles => delta = 0 */
+			if(s.delta==0) s.delta = 1;        /* kludge to fix */
+			s.alpha = initalpha;
+			s.radius = initradius;
+			
+			s.p = 0;
+			
+			s.rad = Std.int(s.radius);
+			if (s.rad <= 1) s.rad = 0;
+			radpower = new Array<Float>();
+			for (i in 0...(s.rad)) 
+				radpower.push(Math.floor( s.alpha*(((s.rad*s.rad - i*i)*radbias)/(s.rad*s.rad)) ));
+			
+			if(verbose) trace("beginning 1D learning: initial radius=" + s.rad + "\n");
 
-		if ((lengthcount%prime1) != 0) step = 4*prime1;
-		else {
-			if ((lengthcount%prime2) !=0) step = 4*prime2;
+			if ((lengthcount%prime1) != 0) s.step = 4*prime1;
 			else {
-				if ((lengthcount%prime3) !=0) step = 4*prime3;
-				else step = prime4;
+				if ((lengthcount%prime2) !=0) s.step = 4*prime2;
+				else {
+					if ((lengthcount%prime3) !=0) s.step = 4*prime3;
+					else s.step = prime4;
+				}
 			}
+			
+			s.i = 0;
+			s.started = true;
 		}
 		
-		i = 0;
-		while (i < samplepixels) 
-		{
-			if (thepicture.get(p) > 0)
-			{            
-				al = thepicture.get(p);
-				b = Std.int(biasvalue(thepicture.get(p + 3)));
-				g = Std.int(biasvalue(thepicture.get(p + 2)));
-				r = Std.int(biasvalue(thepicture.get(p + 1)));
+		while (s.i < s.samplepixels) {
+			if (isARGB && thepicture.get(s.p) > 0 || !isARGB && thepicture.get(s.p + 3) > 0) {            
+				if (isARGB) {
+					s.al = thepicture.get(s.p);
+					s.b = Std.int(biasvalue(thepicture.get(s.p + 3)));
+					s.g = Std.int(biasvalue(thepicture.get(s.p + 2)));
+					s.r = Std.int(biasvalue(thepicture.get(s.p + 1)));
+				} else {
+					s.al = thepicture.get(s.p + 3);
+					s.b = Std.int(biasvalue(thepicture.get(s.p + 2)));
+					s.g = Std.int(biasvalue(thepicture.get(s.p + 1)));
+					s.r = Std.int(biasvalue(thepicture.get(s.p)));
+				}
+			} else {
+				s.al=s.r=s.g=s.b=0;
 			}
-			else
-			{
-				al=r=g=b=0;
-			}
-			j = contest(al,b,g,r);
 
-			altersingle(alpha,j,al,b,g,r);
-			if (rad > 0) alterneigh(rad,j,al,b,g,r);   /* alter neighbours */
+			var j = contest(s.al,s.b,s.g,s.r);
+			altersingle(s.alpha,j,s.al,s.b,s.g,s.r);
+			if (s.rad > 0) alterneigh(s.rad,j,s.al,s.b,s.g,s.r);   /* alter neighbours */
 
-			p += step;
-			while (p >= lengthcount) p -= lengthcount;
+			s.p += s.step;
+			while (s.p >= lengthcount) s.p -= lengthcount;
 		
-			i++;
-			if (i%delta == 0) {                    /* FPE here if delta=0*/	
-				alpha -= alpha / alphadec;
-				radius -= radius / radiusdec;
-				rad = Std.int(radius);
-				if (rad <= 1) rad = 0;
-				for (j in 0...rad) 
-					radpower[j] = Math.floor( alpha*(((rad*rad - j*j)*radbias)/(rad*rad)) );
+			s.i++;
+			if (s.i%s.delta == 0) {                    /* FPE here if delta=0*/	
+				s.alpha -= s.alpha / alphadec;
+				s.radius -= s.radius / radiusdec;
+				s.rad = Std.int(s.radius);
+				if (s.rad <= 1) s.rad = 0;
+				for (j in 0...(s.rad)) 
+					radpower[j] = Math.floor( s.alpha*(((s.rad*s.rad - j*j)*radbias)/(s.rad*s.rad)) );
 			}
+			if (Date.now().getTime() - quantizationStatus.chunkStartedTime > quantizationStatus.workChunkTimeSize) { return; }
 		}
-		if(verbose) trace("finished 1D learning: final alpha="+(1.0 * alpha/initalpha)+" !\n");
+		if (verbose) trace("finished 1D learning: final alpha=" + (1.0 * s.alpha / initalpha) + " !\n");
+		s.finished = true;
 	}
-
 }
 
