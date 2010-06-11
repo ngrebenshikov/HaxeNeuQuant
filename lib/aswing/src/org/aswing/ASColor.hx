@@ -1,0 +1,47 @@
+package org.aswing;
+
+extern class ASColor {
+	function new(?rgb : UInt, ?alpha : Float) : Void;
+	function brighter(?factor : Float) : ASColor;
+	function changeAlpha(newAlpha : Float) : ASColor;
+	function changeHue(newHue : Float) : ASColor;
+	function changeLuminance(newLuminance : Float) : ASColor;
+	function changeSaturation(newSaturation : Float) : ASColor;
+	function darker(?factor : Float) : ASColor;
+	function equals(o : Dynamic) : Bool;
+	function getARGB() : UInt;
+	function getAlpha() : Float;
+	function getBlue() : UInt;
+	function getGreen() : UInt;
+	function getHue() : Float;
+	function getLuminance() : Float;
+	function getRGB() : UInt;
+	function getRed() : UInt;
+	function getSaturation() : Float;
+	function toString() : String;
+	private var alpha : Float;
+	private var hue : Float;
+	private var luminance : Float;
+	private var rgb : UInt;
+	private var saturation : Float;
+	static var BLACK : ASColor;
+	static var BLUE : ASColor;
+	static var CYAN : ASColor;
+	static var DARK_GRAY : ASColor;
+	static var GRAY : ASColor;
+	static var GREEN : ASColor;
+	static var HALO_BLUE : ASColor;
+	static var HALO_GREEN : ASColor;
+	static var HALO_ORANGE : ASColor;
+	static var LIGHT_GRAY : ASColor;
+	static var MAGENTA : ASColor;
+	static var ORANGE : ASColor;
+	static var PINK : ASColor;
+	static var RED : ASColor;
+	static var WHITE : ASColor;
+	static var YELLOW : ASColor;
+	static function getASColor(r : UInt, g : UInt, b : UInt, ?a : Float) : ASColor;
+	static function getASColorWithHLS(h : Float, l : Float, s : Float, ?a : Float) : ASColor;
+	static function getRGBWith(rr : UInt, gg : UInt, bb : UInt) : UInt;
+	static function getWithARGB(argb : UInt) : ASColor;
+}

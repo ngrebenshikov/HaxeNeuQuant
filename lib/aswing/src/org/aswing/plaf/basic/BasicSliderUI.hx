@@ -1,0 +1,48 @@
+package org.aswing.plaf.basic;
+
+extern class BasicSliderUI extends org.aswing.plaf.BaseComponentUI, implements org.aswing.plaf.SliderUI {
+	function new() : Void;
+	function getTrackMargin() : org.aswing.Insets;
+	function valueForXPosition(xPos : Int) : Int;
+	function valueForYPosition(yPos : Int) : Int;
+	function xPositionForValue(value : Int) : Float;
+	function yPositionForValue(value : Int) : Int;
+	private var darkShadowColor : org.aswing.ASColor;
+	private var highlightColor : org.aswing.ASColor;
+	private var lightColor : org.aswing.ASColor;
+	private var progressCanvas : flash.display.Shape;
+	private var progressColor : org.aswing.ASColor;
+	private var shadowColor : org.aswing.ASColor;
+	private var slider : org.aswing.JSlider;
+	private var thumbIcon : org.aswing.Icon;
+	private var thumbRect : org.aswing.geom.IntRectangle;
+	private var tickColor : org.aswing.ASColor;
+	private var tickRect : org.aswing.geom.IntRectangle;
+	private var trackDrawRect : org.aswing.geom.IntRectangle;
+	private var trackRect : org.aswing.geom.IntRectangle;
+	private function configureSliderColors() : Void;
+	private function countThumbRect() : Void;
+	private function countTickRect(b : org.aswing.geom.IntRectangle) : Void;
+	private function countTickSize(sliderRect : org.aswing.geom.IntRectangle) : org.aswing.geom.IntDimension;
+	private function countTrackAndThumbSize(sliderRect : org.aswing.geom.IntRectangle) : org.aswing.geom.IntDimension;
+	private function countTrackRect(b : org.aswing.geom.IntRectangle) : Void;
+	private function disposValueTip() : Void;
+	private function getPrefferedLength() : Int;
+	private function getPropertyPrefix() : String;
+	private function getThumbSize() : org.aswing.geom.IntDimension;
+	private function getTickLength() : Float;
+	private function getTickTrackGap() : Int;
+	private function installComponents() : Void;
+	private function installDefaults() : Void;
+	private function installListeners() : Void;
+	private function isVertical() : Bool;
+	private function paintThumb(g : org.aswing.graphics.Graphics2D, drawRect : org.aswing.geom.IntRectangle) : Void;
+	private function paintTick(g : org.aswing.graphics.Graphics2D, drawRect : org.aswing.geom.IntRectangle) : Void;
+	private function paintTrack(g : org.aswing.graphics.Graphics2D, drawRect : org.aswing.geom.IntRectangle) : Void;
+	private function paintTrackProgress(g : org.aswing.graphics.Graphics2D, trackDrawRect : org.aswing.geom.IntRectangle) : Void;
+	private function scrollThumbToCurrentMousePosition() : Void;
+	private function showValueTip() : Void;
+	private function uninstallComponents() : Void;
+	private function uninstallDefaults() : Void;
+	private function uninstallListeners() : Void;
+}

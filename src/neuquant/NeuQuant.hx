@@ -161,8 +161,9 @@ class NeuQuant {
 		
 		learn(sampleFactor, verbose);
 		if (!learningStatus.finished) return quantizationStatus; //Learning was interruped
-		
+		trace("learn");
 		inxbuild();
+		trace("build");
 		
 		quantizationStatus.finished = true;
 		return quantizationStatus;
@@ -329,7 +330,7 @@ class NeuQuant {
 	    var r: Int = (color >> 16) & 0xff;
 	    var g: Int = (color >>  8) & 0xff;
 	    var b: Int = (color      ) & 0xff;
-	    return inxsearch(al, b, g, r);
+	    return slowinxsearch(al, b, g, r);
 	}
 	
 	public function getColor(index: Int): Int {

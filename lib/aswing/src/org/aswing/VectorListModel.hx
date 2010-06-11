@@ -1,0 +1,40 @@
+package org.aswing;
+
+extern class VectorListModel extends AbstractListModel, implements MutableListModel, implements org.aswing.util.List {
+	function new(?initalData : Array<Dynamic>) : Void;
+	function append(obj : Dynamic, ?index : Int) : Void;
+	function appendAll(arr : Array<Dynamic>, ?index : Int) : Void;
+	function appendList(list : org.aswing.util.List, ?index : Int) : Void;
+	function clear() : Void;
+	function contains(obj : Dynamic) : Bool;
+	function first() : Dynamic;
+	function get(i : Int) : Dynamic;
+	function getElementAt(i : Int) : Dynamic;
+	function getSize() : Int;
+	function indexOf(obj : Dynamic) : Int;
+	function insertElementAt(item : Dynamic, index : Int) : Void;
+	function isEmpty() : Bool;
+	function last() : Dynamic;
+	function pop() : Dynamic;
+	function remove(obj : Dynamic) : Dynamic;
+	function removeAt(index : Int) : Dynamic;
+	function removeElementAt(index : Int) : Void;
+	function removeRange(fromIndex : Int, toIndex : Int) : Array<Dynamic>;
+	function replaceAt(index : Int, obj : Dynamic) : Dynamic;
+	function shift() : Dynamic;
+	function size() : Int;
+	function sort(compare : Dynamic, options : Int) : Array<Dynamic>;
+	function sortOn(key : Dynamic, options : Int) : Array<Dynamic>;
+	function subArray(startIndex : Int, length : Int) : Array<Dynamic>;
+	function toArray() : Array<Dynamic>;
+	function toString() : String;
+	function valueChanged(obj : Dynamic) : Void;
+	function valueChangedAt(index : Int) : Void;
+	function valueChangedRange(from : Int, to : Int) : Void;
+	private var _elements : Array<Dynamic>;
+	static var CASEINSENSITIVE : Int;
+	static var DESCENDING : Int;
+	static var NUMERIC : Int;
+	static var RETURNINDEXEDARRAY : Int;
+	static var UNIQUESORT : Int;
+}

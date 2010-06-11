@@ -1,0 +1,48 @@
+package org.aswing.plaf.basic;
+
+extern class BasicAdjusterUI extends org.aswing.plaf.BaseComponentUI, implements org.aswing.plaf.AdjusterUI {
+	function new() : Void;
+	function getInputText() : org.aswing.JTextField;
+	function getPopupSlider() : org.aswing.JSlider;
+	private var adjuster : org.aswing.JAdjuster;
+	private var arrowButton : org.aswing.Component;
+	private var arrowLightColor : org.aswing.ASColor;
+	private var arrowShadowColor : org.aswing.ASColor;
+	private var darkShadowColor : org.aswing.ASColor;
+	private var highlightColor : org.aswing.ASColor;
+	private var inputText : org.aswing.JTextField;
+	private var lightColor : org.aswing.ASColor;
+	private var popup : org.aswing.JPopup;
+	private var popupSlider : org.aswing.JSlider;
+	private var popupSliderUI : org.aswing.plaf.SliderUI;
+	private var shadowColor : org.aswing.ASColor;
+	private var startEditingValue : Int;
+	private var startMousePoint : org.aswing.geom.IntPoint;
+	private var startValue : Float;
+	private var thumbColor : org.aswing.ASColor;
+	private var thumbDarkShadowColor : org.aswing.ASColor;
+	private var thumbHighlightColor : org.aswing.ASColor;
+	private var thumbLightHighlightColor : org.aswing.ASColor;
+	private var thumbLightShadowColor : org.aswing.ASColor;
+	private function createArrowButton() : org.aswing.Component;
+	private function createArrowIcon() : org.aswing.Icon;
+	private function createPopupSliderUI() : org.aswing.plaf.SliderUI;
+	private function fillInputTextWithCurrentValue() : Void;
+	private function fireActionEvent() : Void;
+	private function getPopup() : org.aswing.JPopup;
+	private function getPropertyPrefix() : String;
+	private function getShouldFilledText() : String;
+	private function getSliderTrackHeight() : Float;
+	private function getSliderTrackWidth() : Float;
+	private function getTextButtonGap() : Int;
+	private function getUnitIncrement() : Int;
+	private function initInputText() : Void;
+	private function initPopupSlider() : Void;
+	private function installComponents() : Void;
+	private function installDefaults() : Void;
+	private function installListeners() : Void;
+	private function layoutAdjuster() : Void;
+	private function uninstallComponents() : Void;
+	private function uninstallDefaults() : Void;
+	private function uninstallListeners() : Void;
+}

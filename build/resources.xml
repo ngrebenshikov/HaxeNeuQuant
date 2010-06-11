@@ -1,0 +1,8 @@
+<movie version="10">
+	<ScriptLimits maxRecursionDepth="256" timeout="1000"/>
+	<frame>
+		<library>
+			<clip id="aswing3" import="../lib/aswing/library.swf" />
+		</library>
+	</frame>
+</movie>

@@ -1,0 +1,47 @@
+package org.aswing;
+
+extern class JViewport extends Container, implements Viewportable {
+	function new(?view : Component, ?tracksWidth : Bool, ?tracksHeight : Bool) : Void;
+	function addStateListener(listener : Dynamic, ?priority : Int, ?useWeakReference : Bool) : Void;
+	function ensureRectVisible(contentRect : org.aswing.geom.IntRectangle, ?programmatic : Bool) : Void;
+	function getExtentSize() : org.aswing.geom.IntDimension;
+	function getHorizontalAlignment() : Int;
+	function getHorizontalBlockIncrement() : Int;
+	function getHorizontalUnitIncrement() : Int;
+	function getVerticalAlignment() : Int;
+	function getVerticalBlockIncrement() : Int;
+	function getVerticalUnitIncrement() : Int;
+	function getView() : Component;
+	function getViewPosition() : org.aswing.geom.IntPoint;
+	function getViewSize() : org.aswing.geom.IntDimension;
+	function getViewportPane() : Component;
+	function isTracksHeight() : Bool;
+	function isTracksWidth() : Bool;
+	function removeStateListener(listener : Dynamic) : Void;
+	function scrollHorizontal(delta : Int) : Void;
+	function scrollRectToVisible(contentRect : org.aswing.geom.IntRectangle, ?programmatic : Bool) : Void;
+	function scrollToBottomLeft() : Void;
+	function scrollToBottomRight() : Void;
+	function scrollToTopLeft() : Void;
+	function scrollToTopRight() : Void;
+	function scrollVertical(delta : Int) : Void;
+	function setHorizontalAlignment(alignment : Int) : Void;
+	function setHorizontalBlockIncrement(increment : Int) : Void;
+	function setHorizontalUnitIncrement(increment : Int) : Void;
+	function setTracksHeight(b : Bool) : Void;
+	function setTracksWidth(b : Bool) : Void;
+	function setVerticalAlignment(alignment : Int) : Void;
+	function setVerticalBlockIncrement(increment : Int) : Void;
+	function setVerticalUnitIncrement(increment : Int) : Void;
+	function setView(view : Component) : Void;
+	function setViewPosition(p : org.aswing.geom.IntPoint, ?programmatic : Bool) : Void;
+	function setViewportTestSize(s : org.aswing.geom.IntDimension) : Void;
+	private function fireStateChanged(?programmatic : Bool) : Void;
+	private function restrictionViewPos(p : org.aswing.geom.IntPoint) : org.aswing.geom.IntPoint;
+	static var AUTO_INCREMENT : Int;
+	static var BOTTOM : Int;
+	static var CENTER : Int;
+	static var LEFT : Int;
+	static var RIGHT : Int;
+	static var TOP : Int;
+}

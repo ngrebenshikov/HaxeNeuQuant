@@ -1,0 +1,40 @@
+package org.aswing;
+
+extern class JSlider extends Component, implements Orientable {
+	function new(?orientation : Int, ?min : Int, ?max : Int, ?value : Int) : Void;
+	function addStateListener(listener : Dynamic, ?priority : Int, ?useWeakReference : Bool) : Void;
+	function getExtent() : Int;
+	function getInverted() : Bool;
+	function getMajorTickSpacing() : Int;
+	function getMaximum() : Int;
+	function getMinimum() : Int;
+	function getMinorTickSpacing() : Int;
+	function getModel() : BoundedRangeModel;
+	function getOrientation() : Int;
+	function getPaintTicks() : Bool;
+	function getPaintTrack() : Bool;
+	function getShowValueTip() : Bool;
+	function getSnapToTicks() : Bool;
+	function getValue() : Int;
+	function getValueIsAdjusting() : Bool;
+	function getValueTip() : JToolTip;
+	function removeStateListener(listener : Dynamic) : Void;
+	function setExtent(extent : Int) : Void;
+	function setInverted(b : Bool) : Void;
+	function setMajorTickSpacing(n : Int) : Void;
+	function setMaximum(maximum : Int) : Void;
+	function setMinimum(minimum : Int) : Void;
+	function setMinorTickSpacing(n : Int) : Void;
+	function setModel(newModel : BoundedRangeModel) : Void;
+	function setOrientation(orientation : Int) : Void;
+	function setPaintTicks(b : Bool) : Void;
+	function setPaintTrack(b : Bool) : Void;
+	function setShowValueTip(b : Bool) : Void;
+	function setSnapToTicks(b : Bool) : Void;
+	function setValue(value : Int, ?programmatic : Bool) : Void;
+	function setValueIsAdjusting(b : Bool) : Void;
+	function setValueTip(valueTip : JToolTip) : Void;
+	function setValues(newValue : Int, newExtent : Int, newMin : Int, newMax : Int, ?programmatic : Bool) : Void;
+	static var HORIZONTAL : Int;
+	static var VERTICAL : Int;
+}
