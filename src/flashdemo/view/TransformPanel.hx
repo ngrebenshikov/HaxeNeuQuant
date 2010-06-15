@@ -37,7 +37,7 @@ class TransformPanel extends SoftBox {
 		
 		var sourceBitmap: ScaleView = new ScaleView(new BitmapView(bitmap)); 
 		{
-			sourceBitmap.setPreferredSize(new IntDimension(400, 500));
+			sourceBitmap.setPreferredSize(new IntDimension(450, 450));
 		}
 		
 		var parametersPanel: JPanel = new JPanel(new CenterLayout());
@@ -50,11 +50,15 @@ class TransformPanel extends SoftBox {
 				
 				var convertButton: JButton = new JButton("Convert");
 				{
-					convertButton.setPreferredSize(new IntDimension(70, 25));
+					convertButton.setPreferredSize(new IntDimension(100, 25));
 					var me = this;
 					convertButton.addActionListener(function() {
-						me.quantizeImage(bitmap, Std.parseInt(textField.getText()), function(bitmap: Bitmap) {
+						var quantizationDialog: QuantizingDialog = new QuantizingDialog();
+						quantizationDialog.setProgress(0);
+						quantizationDialog.show();
+						me.quantizeImage(bitmap, Std.parseInt(textField.getText()), quantizationDialog, function(bitmap: Bitmap) {
 							me.resultBitmap.setViewport(new JViewport(new BitmapView(bitmap)));
+							quantizationDialog.hide();
 						});
 					});
 				}
@@ -67,7 +71,7 @@ class TransformPanel extends SoftBox {
 		
 		resultBitmap = new JScrollPane(); 
 		{
-			resultBitmap.setPreferredSize(new IntDimension(400, 500));
+			resultBitmap.setPreferredSize(new IntDimension(450, 450));
 		}
 		
 		append(sourceBitmap);
@@ -76,7 +80,7 @@ class TransformPanel extends SoftBox {
 		
 	}
 	
-	function quantizeImage(original: Bitmap, amountOfColors: Int, after: Bitmap -> Void ): Void {
+	function quantizeImage(original: Bitmap, amountOfColors: Int, quantizingDialog: QuantizingDialog, after: Bitmap -> Void ): Void {
 		var data: BitmapData = original.bitmapData.clone();
 		var bytesArray = data.getPixels(new Rectangle(0, 0, data.width, data.height));
 		
@@ -85,7 +89,7 @@ class TransformPanel extends SoftBox {
 		while (bytesArray.bytesAvailable > 0) {
 			hash.set(bytesArray.readInt(), true);
 		}
-		trace("Colors in: " + Lambda.count(hash));
+		//trace("Colors in: " + Lambda.count(hash));
 
 		bytesArray.position = 0;
 		var bytes: Bytes = Bytes.ofData(bytesArray);//bytesBuffer.getBytes();
@@ -103,7 +107,7 @@ class TransformPanel extends SoftBox {
 				outBytes.writeInt(nq.getColor(index));
 				i += 4;
 			}
-			trace("Colors out: " + Lambda.count(hash));
+			//trace("Colors out: " + Lambda.count(hash));
 			
 			//Setting new pixels to data
 			outBytes.position = 0;
@@ -118,6 +122,7 @@ class TransformPanel extends SoftBox {
 		timer.run = function() { 
 			try {
 				status = nq.quantizeAsync(bytes, true, amountOfColors, 1, 1, false, 100);
+				quantizingDialog.setProgress(status.percentage);
 				if (status.finished) {
 					timer.stop();
 					remap();

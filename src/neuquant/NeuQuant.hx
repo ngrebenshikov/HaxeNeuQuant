@@ -160,10 +160,11 @@ class NeuQuant {
 		quantizationStatus.chunkStartedTime = Date.now().getTime();
 		
 		learn(sampleFactor, verbose);
+		quantizationStatus.percentage = Std.int(learningStatus.i / learningStatus.samplepixels * 100);
 		if (!learningStatus.finished) return quantizationStatus; //Learning was interruped
-		trace("learn");
+		//trace("learn");
 		inxbuild();
-		trace("build");
+		//trace("build");
 		
 		quantizationStatus.finished = true;
 		return quantizationStatus;
