@@ -6,3 +6,7 @@
 /tests/flash/bin/NeuQuant.swf
 /localbuild/flashdemo.swf
 /localbuild/resources/resources.swf
+/localbuild/haxelib/haxelib.xml
+/localbuild/haxelib/neuquant/NeuQuant.hx
+/localbuild/neuquant.swf
+/localbuild/neuquant.zip

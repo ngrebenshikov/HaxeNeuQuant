@@ -142,12 +142,36 @@ class NeuQuant {
 
 	var gamma_correction: Float; // 1.0/2.2 usually
 	
-	public function new() {}
+	public function new() { }
+	
+	/**
+	 * It quantizes an image. An image should be a byte array with 32 bit per pixel. It supports ARGB and RGBA.
+	 * @param	image Bytes
+	 * @param	isARGB Bool
+	 * @param	colorsAmount A result number of colors
+	 * @param	gammaCorrection A gamma correction factor
+	 * @param	sampleFactor A quality factor in [1..30]. 1 is the best, 30 is the worst.
+	 * @param	verbose Bool
+	 */
+	
 	public function quantize(image: Bytes, isARGB: Bool, colorsAmount: Int, gammaCorrection: Float, sampleFactor: Int, verbose: Bool) {
 		quantizeAsync(image, isARGB, colorsAmount, gammaCorrection, sampleFactor, verbose, 31536000000 /* a year */);
 	}
 	
 	var quantizationStatus: QuantizationStatus;
+	/**
+	 * It quantizes an image in asynchronomus way. Whole work is separated to small chunks with specified maximum operating time. 
+	 * When each chunk finishes the method returns current status (QuantizationStatus).
+	 * @param	image Bytes
+	 * @param	isARGB Bool
+	 * @param	colorsAmount
+	 * @param	colorsAmount A result number of colors
+	 * @param	gammaCorrection A gamma correction factor
+	 * @param	sampleFactor A quality factor in [1..30]. 1 is the best, 30 is the worst.
+	 * @param	verbose Bool
+	 * @param	workChunkTimeSize Maximum operating time for a current chunk in milliseconds.
+	 * @return  A currect status of quantization (QuantizeStatus)
+	 */
 	public function quantizeAsync(image: Bytes, isARGB: Bool, colorsAmount: Int, 
 									gammaCorrection: Float, sampleFactor: Int, verbose: Bool, workChunkTimeSize: Float): QuantizationStatus {
 		this.isARGB = isARGB;
@@ -326,14 +350,23 @@ class NeuQuant {
 		return best;
 	}
 
-    public function lookup (color: Int) {
+    /**
+     * Getting an index of a specified color in a resulted palette.
+     * @param	color 32-bit integer
+     */
+	public function lookup (color: Int) {
 	    var al: Int = (color >> 24) & 0xff;
 	    var r: Int = (color >> 16) & 0xff;
 	    var g: Int = (color >>  8) & 0xff;
 	    var b: Int = (color      ) & 0xff;
 	    return slowinxsearch(al, b, g, r);
 	}
-	
+
+	/**
+	 * Getting a 32-bit ARGB integer for a index of color using a current palette.
+	 * @param	index Int
+	 * @return
+	 */
 	public function getColor(index: Int): Int {
 		return (colormap[index].al << 24) | (colormap[index].r << 16) | (colormap[index].g << 8) | colormap[index].b;
 	}
