@@ -1,5 +1,0 @@
--swf bin/NeuQuant.swf
--swf-header 800:600:30
--swf-version 10
--main Main
--cp ../../src
