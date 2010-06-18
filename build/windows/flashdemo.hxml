@@ -1,6 +1,6 @@
 -swf ../../localbuild/flashdemo.swf
 -swf-lib ../../localbuild/resources/resources.swf
--swf-header 800:600:50
+-swf-header 1000:700:50
 -swf-version 10
 -main flashdemo.Main
 -cp ../../src
