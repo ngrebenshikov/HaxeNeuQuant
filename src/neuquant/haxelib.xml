@@ -1,0 +1,5 @@
+<project name="neuquant" url="http://github.com/ngrebenshikov/HaxeNeuQuant" license="GPL">
+    <user name="grebenshikov.n"/>
+    <description>A haxe implementation of NEUQUANT Neural-Net quantization algorithm by Anthony Dekker, 1994</description>
+    <version name="0.0.1">It works.</version>
+</project>

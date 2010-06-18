@@ -1,0 +1,1 @@
+tools\swfmill\swfmill simple ../resources.xml ../../localbuild/resources/resources.swf

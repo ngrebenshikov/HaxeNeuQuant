@@ -1,0 +1,6 @@
+-swf ../../localbuild/neuquant.swf
+-swf-header 100:100:50
+-swf-version 10
+-main neuquant.Main
+-cp ../../src
+--flash-strict
