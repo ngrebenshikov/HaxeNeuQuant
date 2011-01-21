@@ -1,2 +1,2 @@
 haxe flashdemo.hxml
-copy ..\..\localbuild\flashdemo.swf ..\..\bin
+rem copy ..\..\localbuild\flashdemo.swf bin

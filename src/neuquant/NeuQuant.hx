@@ -81,6 +81,13 @@ typedef NqColormap = {
 	var al: Int;
 }
 
+typedef NqLabColormap = {
+	var l: Float;
+	var a: Float;
+	var b: Float;
+	var al: Int;
+}
+
 class NeuQuant {
     
 	static var MAXNETSIZE: Int = 256;    /* maximum number of colours that can be used. actual number is now passed to initcolors */
@@ -131,7 +138,6 @@ class NeuQuant {
 	var lengthcount: Int;				/* lengthcount = H*W*3 */
 	
 	var network: Array<NqPixel>;			/* the network itself */
-
 	var netindex: Array<Int>;			/* for network lookup - really 256 */
 
 	var bias: Array<Float>;			/* bias and freq arrays for learning */
@@ -141,6 +147,8 @@ class NeuQuant {
 	var netsize: Int;                             /* Number of colours to use. Made a global instead of #define */
 
 	var gamma_correction: Float; // 1.0/2.2 usually
+	
+	var compareInLabColorSpace: Bool;
 	
 	public function new() { }
 	
@@ -173,8 +181,10 @@ class NeuQuant {
 	 * @return  A currect status of quantization (QuantizeStatus)
 	 */
 	public function quantizeAsync(image: Bytes, isARGB: Bool, colorsAmount: Int, 
-									gammaCorrection: Float, sampleFactor: Int, verbose: Bool, workChunkTimeSize: Float): QuantizationStatus {
+									gammaCorrection: Float, sampleFactor: Int, verbose: Bool, workChunkTimeSize: Float, ?compareInLabColorSpace: Bool): QuantizationStatus {
+		
 		this.isARGB = isARGB;
+		this.compareInLabColorSpace = compareInLabColorSpace;
 		if (null == quantizationStatus || quantizationStatus.finished) {
 			quantizationStatus = new QuantizationStatus();
 			quantizationStatus.workChunkTimeSize = workChunkTimeSize;
@@ -189,6 +199,9 @@ class NeuQuant {
 		//trace("learn");
 		inxbuild();
 		//trace("build");
+		if (compareInLabColorSpace) {
+			calculateLabColors();
+		}
 		
 		quantizationStatus.finished = true;
 		return quantizationStatus;
@@ -251,20 +264,21 @@ class NeuQuant {
 	}
 
 	/* Output colormap to unsigned char ptr in RGBA format */
-	function getcolormap(map: BytesBuffer): Void {
-		var j: Int;
-		for(j in 0 ... netsize) {
-			map.addByte(unbiasvalue(network[j].r));
-			map.addByte(unbiasvalue(network[j].g));
-			map.addByte(unbiasvalue(network[j].b));
-			map.addByte(round_biased(network[j].al));
-		}
-	}
+	//function getcolormap(map: BytesBuffer): Void {
+		//var j: Int;
+		//for(j in 0 ... netsize) {
+			//map.addByte(unbiasvalue(network[j].r));
+			//map.addByte(unbiasvalue(network[j].g));
+			//map.addByte(unbiasvalue(network[j].b));
+			//map.addByte(round_biased(network[j].al));
+		//}
+	//}
 
 	/* Insertion sort of network and building of netindex[0..255] (to do after unbias)
 	   ------------------------------------------------------------------------------- */
 
 	var colormap: Array<NqColormap>;
+	var labColorMap: Array<NqLabColormap>;
 
 	function inxbuild(): Void {
 		var i: Int, j: Int, smallpos: Int, smallval: Int;
@@ -319,6 +333,46 @@ class NeuQuant {
 		return (1.0 - transparency*transparency);
 	}
 
+	function calculateLabColors() {
+		labColorMap = [];
+		for (i in 0...netsize)	{
+			var xyz = rgb2xyz(colormap[i].r, colormap[i].g, colormap[i].b);
+			var lab = xyz2cielab(xyz.x, xyz.y, xyz.z );
+			labColorMap.push( { al: colormap[i].al, l: lab.l, a: lab.a, b: lab.b } );
+		}
+	}
+	
+	function getLabDistance(i: Int, al: Int, l: Int, a: Int, b: Int): Float {
+		var	a: Float = labColorMap[i].l - l;
+		var dist: Float = a*a;
+
+		a = labColorMap[i].a - a;
+		dist += a*a;
+		
+		a = labColorMap[i].b - b;
+		dist += a*a;
+		
+		a = colormap[i].al - al;
+		dist += a * a;
+		return dist;
+	}
+	
+	function getRgbDistance(i: Int, al: Int, b: Int, g: Int, r: Int) {
+		var	a: Float = colormap[i].r - r;
+		var dist: Float = a*a;
+
+		a = colormap[i].g - g;
+		dist += a*a;
+		
+		a = colormap[i].b - b;
+		dist += a*a;
+		
+		a = colormap[i].al - al;
+		dist += a * a;
+		return dist;
+		
+	}
+	
 	/* Search for ABGR values 0..255 (after net is unbiased) and return colour index
 	   ---------------------------------------------------------------------------- */
 
@@ -329,22 +383,19 @@ class NeuQuant {
 		r = Std.int(biasvalue(r));
 		g = Std.int(biasvalue(g));
 		b = Std.int(biasvalue(b));
-	   
-		var colimp: Float = colorimportance(al);
 		
-		for(i in 0...netsize)	{
-			a = colormap[i].r - r;
-			dist = a*a * colimp;
-
-			a = colormap[i].g - g;
-			dist += a*a * colimp;
-			
-			a = colormap[i].b - b;
-			dist += a*a * colimp;
-			
-			a = colormap[i].al - al;
-			dist += a*a;
-			
+		var lab: Dynamic = null;
+		if (compareInLabColorSpace) {
+			var xyz = rgb2xyz(r, g, b);
+			lab = xyz2cielab(xyz.x, xyz.y, xyz.z );
+		}
+   
+		for (i in 0...netsize)	{
+			if (compareInLabColorSpace) {
+				dist = getLabDistance(i, al, lab.l, lab.a, lab.b);
+			} else {
+				dist = getRgbDistance(i, al, b, g, r);
+			}
 			if (dist<bestd) {bestd=dist; best=i;}        
 		}
 		return best;
@@ -611,6 +662,43 @@ class NeuQuant {
 		}
 		if (verbose) trace("finished 1D learning: final alpha=" + (1.0 * s.alpha / initalpha) + " !\n");
 		s.finished = true;
+	}
+
+	public static function rgb2xyz(r:Int, g:Int, b: Int): Dynamic {
+		var fR: Float = ( r / 255);        //R from 0 to 255
+		var fG: Float = ( g / 255 );        //G from 0 to 255
+		var fB: Float = ( b / 255 );        //B from 0 to 255
+
+		fR = if ( fR > 0.04045 ) Math.pow(( fR + 0.055 ) / 1.055, 2.4)	else fR / 12.92;
+		fG = if ( fG > 0.04045 ) Math.pow(( fG + 0.055 ) / 1.055, 2.4) else fG / 12.92;
+		fB = if ( fB > 0.04045 ) Math.pow(( fB + 0.055 ) / 1.055, 2.4) else fB / 12.92;
+
+		fR *= 100;
+		fG *= 100;
+		fB *= 100;
+
+		//Observer. = 2°, Illuminant = D65
+		return {
+			x: fR * 0.4124 + fG * 0.3576 + fB * 0.1805,
+			y: fR * 0.2126 + fG * 0.7152 + fB * 0.0722,
+			z: fR * 0.0193 + fG * 0.1192 + fB * 0.9505	
+		};
+	}
+	
+	private static function xyz2cielab(x:Float, y: Float, z: Float): Dynamic {
+		x /= 95.047;          //ref_X =  95.047   Observer= 2°, Illuminant= D65
+		y /= 100.0;          //ref_Y = 100.000
+		z /= 108.883;          //ref_Z = 108.883
+
+		x = if ( x > 0.008856 ) Math.pow(x, 1/3) else ( 7.787 * x ) + ( 16 / 116 );
+		y = if ( y > 0.008856 ) Math.pow(y, 1/3) else ( 7.787 * y ) + ( 16 / 116 );
+		z = if ( z > 0.008856 ) Math.pow(z, 1/3) else ( 7.787 * z ) + ( 16 / 116 );
+
+		return {
+			l: ( 116 * y ) - 16,
+			a: 500 * ( x - y ),
+			b: 200 * ( y - z )
+		};
 	}
 }
 
