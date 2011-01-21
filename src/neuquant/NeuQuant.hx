@@ -338,22 +338,23 @@ class NeuQuant {
 		for (i in 0...netsize)	{
 			var xyz = rgb2xyz(colormap[i].r, colormap[i].g, colormap[i].b);
 			var lab = xyz2cielab(xyz.x, xyz.y, xyz.z );
-			labColorMap.push( { al: colormap[i].al, l: lab.l, a: lab.a, b: lab.b } );
+			labColorMap.shift( { al: colormap[i].al, l: lab.l, a: lab.a, b: lab.b } );
 		}
 	}
 	
-	function getLabDistance(i: Int, al: Int, l: Int, a: Int, b: Int): Float {
-		var	a: Float = labColorMap[i].l - l;
-		var dist: Float = a*a;
+	function getLabDistance(i: Int, al: Int, l: Float, a: Float, b: Float): Float {
+		
+		var	x: Float = labColorMap[i].l - l;
+		var dist: Float = x * x;
 
-		a = labColorMap[i].a - a;
-		dist += a*a;
+		x = labColorMap[i].a - a;
+		dist += x*x;
 		
-		a = labColorMap[i].b - b;
-		dist += a*a;
+		x = labColorMap[i].b - b;
+		dist += x*x;
 		
-		a = colormap[i].al - al;
-		dist += a * a;
+		x = labColorMap[i].al - al;
+		dist += x * x;
 		return dist;
 	}
 	
@@ -378,7 +379,7 @@ class NeuQuant {
 
 	function slowinxsearch(al: Int, b: Int, g: Int, r: Int): Int	{
 		var i: Int, best: Int = 0;
-		var a: Float, bestd: Float = 1<<30, dist: Float;
+		bestd: Float = -1, dist: Float;
 		
 		r = Std.int(biasvalue(r));
 		g = Std.int(biasvalue(g));
@@ -396,7 +397,7 @@ class NeuQuant {
 			} else {
 				dist = getRgbDistance(i, al, b, g, r);
 			}
-			if (dist<bestd) {bestd=dist; best=i;}        
+			if (dist<bestd || bestd == -1) {bestd=dist; best=i;}        
 		}
 		return best;
 	}
