@@ -338,7 +338,7 @@ class NeuQuant {
 		for (i in 0...netsize)	{
 			var xyz = rgb2xyz(colormap[i].r, colormap[i].g, colormap[i].b);
 			var lab = xyz2cielab(xyz.x, xyz.y, xyz.z );
-			labColorMap.shift( { al: colormap[i].al, l: lab.l, a: lab.a, b: lab.b } );
+			labColorMap.unshift( { al: colormap[i].al, l: lab.l, a: lab.a, b: lab.b } );
 		}
 	}
 	
@@ -379,7 +379,7 @@ class NeuQuant {
 
 	function slowinxsearch(al: Int, b: Int, g: Int, r: Int): Int	{
 		var i: Int, best: Int = 0;
-		bestd: Float = -1, dist: Float;
+		var bestd: Float = -1, dist: Float;
 		
 		r = Std.int(biasvalue(r));
 		g = Std.int(biasvalue(g));
